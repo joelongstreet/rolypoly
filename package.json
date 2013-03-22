@@ -1,10 +1,14 @@
 {
-  "name": "rollin",
-  "version": "0.0.1",
-  "engines": {
-    "node": "0.8.x",
-    "npm": "1.1.9"
+  "name"            : "rollin",
+  "description"     : "Easily create ordered svn tags",
+  "author"          : "Joe Longstreet",
+  "preferGlobal"    : "true",
+  "version"         : "0.0.1",
+  "bin"             : { "rollin" : "index.js" },
+  "engines"         : {
+    "node"  : "0.8.x",
+    "npm"   : "1.1.9"
   },
-  "dependencies": {
+  "dependencies"    : {
   }
 }
