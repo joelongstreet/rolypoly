@@ -1,21 +1,11 @@
-/*
-x 1. get current svn info. Can i run either svn info or git svn info
-x 2. look at the url and verify that the last item is trunk.
-x 3. Make a remote request to look at the list of tags.
-x 4. find out what the next number should be.
-x 5. Copy trunk to the new tag number
-  6. create the stage file?
-  7. edit the stage file
-  8. commit the stage file
-*/
-
 var fs      = require('fs');
-var process = require('child_process');
+var cp      = require('child_process');
+var path    = require('path');
 var prefix  = 'release_';
 
 var getNextTagIndex = function(earl, next){
 
-    process.exec('svn list ' + earl + '/tags', function(err, stdout, stderr){
+    cp.exec('svn list ' + earl + '/tags', function(err, stdout, stderr){
 
         if(err)         { console.log(err);     }
         else if(stderr) { console.log(stderr);  }
@@ -34,7 +24,7 @@ var makeTag = function(earl, tagName, next){
     var message = '"Creating tag ' + tagName + '"';
     var command = 'svn copy ' + trunk + ' ' + tag + ' -m ' + message;
 
-    process.exec(command, function(err, stdout, stderr){
+    cp.exec(command, function(err, stdout, stderr){
 
         if(err)         { console.log(err);     }
         else if(stderr) { console.log(stderr);  }
@@ -46,29 +36,62 @@ var makeTag = function(earl, tagName, next){
 
 
 var makeStageFile = function(earl, tagName, next){
-    fs.writeFile('svn-temporary-file.txt', tagName, function(err){
-        if(err) { console.log(err); }
-        else {
-            process.exec('svn copy svn-temporary-file.txt ' + earl + tagName + '-m "creating a new stage file"', function(err, stdout, stderr){
-                if(err)         { console.log(err);     }
-                else if(stderr) { console.log(stderr);  }
-                else            {
-                    if(next) {next(stdout)}
-                }
-            });
-        }
+    var localPath       = path.join(process.env['HOME'], '.rollin/tags');
+    var stageFilePath   = path.join(localPath, 'stagefile');
+
+    fs.exists(localPath, function(exists){
+        if(exists == false) { fs.mkdir(localPath, 0777, checkout); }
+        else checkout()
     });
+
+    var checkout = function(){
+        var command = 'svn co ' + earl + '/tags --depth=empty ' + localPath;
+        cp.exec(command, function(err, stdout, stderr){
+            if(err)         { console.log(err);     }
+            else if(stderr) { console.log(stderr);  }
+            else            { writeFile();      }
+        });
+    };
+
+    var writeFile = function(){
+        fs.writeFile(stageFilePath, tagName, function(err){
+            if(err) { console.log(err); }
+            else    { addFile();        }
+        });
+    };
+
+    var addFile = function(){
+        var command = 'svn add ' + stageFilePath;
+        cp.exec(command, function(err, stdout, stderr){
+            console.log('adding file');
+            if(err)         { console.log(err);     }
+            else if(stderr) { console.log(stderr);  }
+            else            { commitFile()          }
+        });
+    };
+
+    var commitFile = function(){
+        var command = 'svn commit ' + localPath + ' -m "creating a new stage file for release ' + tagName + '"';
+        cp.exec(command, function(err, stdout, stderr){
+            console.log('comitting file');
+            if(err)         { console.log(err);     }
+            else if(stderr) { console.log(stderr);  }
+            else            {
+                if(next) {next()}
+            }
+        });
+    };
 };
 
 
 var getSVNinfo = function(next){
 
-    process.exec('git svn info', function (err, stdout, stderr) {
+    cp.exec('git svn info', function (err, stdout, stderr) {
 
         if(err)         { console.log(err);  }
         else if(stdout) { objectify(stdout); }
         else if(stderr) {
-            process.exec('svn info', function (err, stdout, stderr) {
+            cp.exec('svn info', function (err, stdout, stderr) {
                 if(err)         { console.log(err);     }
                 else if(stdout) { objectify(stdout);    }
                 else if(stderr) { console.log(stderr);  }
@@ -108,7 +131,7 @@ getSVNinfo(function(info){
         console.log('Copying trunk to tag "' + tagName + '"...');
 
         makeTag(earl, tagName, function(){
-            console.log('Succesfully created tag... \n Creating temporary file and comitting...');
+            console.log('Updating stage file and comitting...');
             makeStageFile(earl, tagName, function(){
                 console.log('FIN!');
             });
