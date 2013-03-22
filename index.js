@@ -3,16 +3,13 @@ var cp      = require('child_process');
 var path    = require('path');
 var prefix  = 'release_';
 
+
 var getNextTagIndex = function(earl, next){
 
-    cp.exec('svn list ' + earl + '/tags', function(err, stdout, stderr){
-
-        if(err)         { console.log(err);     }
-        else if(stderr) { console.log(stderr);  }
-        else            {
-            if(stdout)  { next(stdout.split('\n').length - 1); }
-            else        { next(0); }
-        }
+    var command = 'svn list ' + earl + '/tags';
+    shellCommand(command, function(stdout){
+        if(stdout)  { next(stdout.split('\n').length - 1); }
+        else        { next(0); }
     });
 };
 
@@ -24,80 +21,106 @@ var makeTag = function(earl, tagName, next){
     var message = '"Creating tag ' + tagName + '"';
     var command = 'svn copy ' + trunk + ' ' + tag + ' -m ' + message;
 
-    cp.exec(command, function(err, stdout, stderr){
-
-        if(err)         { console.log(err);     }
-        else if(stderr) { console.log(stderr);  }
-        else            {
-            if(next) { next(); }
-        }
+    shellCommand(command, function(){
+        if(next) { next(); }
     });
 };
 
 
 var makeStageFile = function(earl, tagName, next){
-    var localPath       = path.join(process.env['HOME'], '.rollin/tags');
-    var stageFilePath   = path.join(localPath, 'stagefile');
 
-    fs.exists(localPath, function(exists){
-        if(exists == false) { fs.mkdir(localPath, 0777, checkout); }
-        else checkout()
+    var localPath       = path.join(process.env['HOME'], '.rollin');
+    var stageFilePath   = path.join(localPath, 'stage');
+
+    fs.mkdir(localPath, 0777, function(){
+        checkout(function(){
+            createFile(function(){
+                writeToFile(function(){
+                    commitFile(function(){
+                        cleanUp(function(){
+                            if(next) { next(); }
+                        });
+                    });
+                });
+            });
+        });
     });
 
-    var checkout = function(){
-        var command = 'svn co ' + earl + '/tags --depth=empty ' + localPath;
-        cp.exec(command, function(err, stdout, stderr){
-            if(err)         { console.log(err);     }
-            else if(stderr) { console.log(stderr);  }
-            else            { writeFile();      }
+    var checkout = function(next){
+        var command = 'svn co ' + earl + '/tags --depth files ' + localPath;
+        shellCommand(command, function(){
+            if(next) { next(); }
         });
     };
 
-    var writeFile = function(){
-        fs.writeFile(stageFilePath, tagName, function(err){
-            if(err) { console.log(err); }
-            else    { addFile();        }
+    var createFile = function(next){
+        fs.exists(stageFilePath, function(exists){
+            if(!exists){
+                fs.writeFile(stageFilePath, function(){
+                    addFile(function(){
+                        if(next) { next(); }
+                    });
+                });
+            } else { if(next) { next(); } }
         });
     };
 
-    var addFile = function(){
+    var addFile = function(next){
         var command = 'svn add ' + stageFilePath;
-        cp.exec(command, function(err, stdout, stderr){
-            console.log('adding file');
-            if(err)         { console.log(err);     }
-            else if(stderr) { console.log(stderr);  }
-            else            { commitFile()          }
+        shellCommand(command, function(){
+            if(next) { next(); }
         });
     };
 
-    var commitFile = function(){
-        var command = 'svn commit ' + localPath + ' -m "creating a new stage file for release ' + tagName + '"';
-        cp.exec(command, function(err, stdout, stderr){
-            console.log('comitting file');
-            if(err)         { console.log(err);     }
-            else if(stderr) { console.log(stderr);  }
-            else            {
-                if(next) {next()}
-            }
+    var writeToFile = function(next){
+        var buffer = new Buffer(tagName);
+        var stream = fs.createWriteStream(stageFilePath);
+        stream.on('open', function(data){
+            stream.write(buffer);
+            stream.end();
+            if(next) { next(); }
         });
     };
+
+    var commitFile = function(next){
+        var command = 'svn commit ' + stageFilePath + ' -m "creating a new stage file for release ' + tagName + '"';
+        shellCommand(command, function(){
+            if(next) { next(); }
+        });
+    };
+
+    var cleanUp = function(next){
+        var command = 'rm -rf ' + localPath;
+        shellCommand(command, function(){
+            if(next) { next(); }
+        });
+    }
 };
+
+
+var shellCommand = function(command, next, errHandler){
+
+    cp.exec(command, function(err, stdout, stderr){
+        if(err) {
+            if(errHandler)  { errHandler();         }
+            else            { console.log(err);     }
+        } else if(stderr) {
+            if(errHandler)  { errHandler()          }
+            else            { console.log(stderr);  }
+        } else {
+            if(next) {next(stdout)}
+        }
+    });
+}
 
 
 var getSVNinfo = function(next){
 
-    cp.exec('git svn info', function (err, stdout, stderr) {
-
-        if(err)         { console.log(err);  }
-        else if(stdout) { objectify(stdout); }
-        else if(stderr) {
-            cp.exec('svn info', function (err, stdout, stderr) {
-                if(err)         { console.log(err);     }
-                else if(stdout) { objectify(stdout);    }
-                else if(stderr) { console.log(stderr);  }
-            });
-        }
-    });
+    var tryGitSvn = function(){
+        shellCommand('git svn info', function(stdout){
+            objectify(stdout);
+        });
+    };
 
     var objectify = function(out){
         var info    = {};
@@ -114,6 +137,8 @@ var getSVNinfo = function(next){
 
         next(info);
     }
+
+    shellCommand('svn info', function(stdout){objectify(stdout)}, tryGitSvn);
 };
 
 
