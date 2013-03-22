@@ -1,8 +1,8 @@
+#!/usr/bin/env node
+
 var fs      = require('fs');
 var cp      = require('child_process');
 var path    = require('path');
-var prefix  = 'release_';
-
 
 var getNextTagIndex = function(earl, next){
 
@@ -152,7 +152,11 @@ getSVNinfo(function(info){
 
     getNextTagIndex(earl, function(index){
 
-        var tagName = prefix + index;
+        var tagName = '_release' + index;
+        if(process.env.TAGNAME != undefined) {
+            tagName = process.env.TAGNAME;
+        }
+
         console.log('Copying trunk to tag "' + tagName + '"...');
 
         makeTag(earl, tagName, function(){
