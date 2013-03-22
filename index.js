@@ -152,7 +152,7 @@ getSVNinfo(function(info){
 
     getNextTagIndex(earl, function(index){
 
-        var tagName = '_release' + index;
+        var tagName = 'release_' + index;
         if(process.env.TAGNAME != undefined) {
             tagName = process.env.TAGNAME;
         }
