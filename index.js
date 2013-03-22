@@ -29,7 +29,7 @@ var makeTag = function(earl, tagName, next){
 
 var makeStageFile = function(earl, tagName, next){
 
-    var localPath       = path.join(process.env['HOME'], '.rollin');
+    var localPath       = path.join(process.env['HOME'], '.rolypoly');
     var stageFilePath   = path.join(localPath, 'stage');
 
     fs.mkdir(localPath, 0777, function(){
