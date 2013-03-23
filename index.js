@@ -147,7 +147,12 @@ console.log('Checking local svn info...');
 getSVNinfo(function(info){
 
     var earl = info.URL;
-    if(earl.indexOf('/trunk') != -1){ earl = earl.replace('/trunk', ''); }
+    if(earl.indexOf('/trunk') != -1){
+        var trunkIndex = earl.indexOf('/trunk');
+        var substring  = earl.substring(trunkIndex, earl.length);
+        earl = earl.replace(substring, '')
+    }
+
     console.log('Gathering tags from remote repository...');
 
     getNextTagIndex(earl, function(index){
