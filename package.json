@@ -15,7 +15,10 @@
   "preferGlobal": "true",
   "version": "0.0.1",
   "bin": {
-    "rolypoly": "index.js"
+    "rolypoly": "index.js",
+    "rollypollie": "index.js",
+    "rollypoly": "index.js",
+    "rollypolly": "index.js"
   },
   "engines": {
     "node": "0.8.x",
