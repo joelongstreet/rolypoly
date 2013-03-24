@@ -27,4 +27,4 @@ Where `stage` is a single line text file containing the name of the tag which wi
 
 To use, first `cd` into a either a working SVN or Git SVN repository. From there, just run the command `rolypoly`. By default RolyPoly will name the tag `release_X`, where X is an automatically generated release number based on the number of releases in the tags directory.
 
-If you don't want RolyPoly to automatically generate a release name, you can specify your own. Sample: `TAGNAME=somename_201303221540`.
+If you don't want RolyPoly to automatically generate a release name, you can specify your own by passing in a flag. Sample: `rolypoly -t someTagName_201303221540`.
