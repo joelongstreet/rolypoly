@@ -153,32 +153,60 @@ var getSVNinfo = function(next){
 };
 
 
-console.log(color.cyan('Checking local svn info...'));
+var printHelp = function(){
+    console.log('\nUsage: rolypoly [options]');
+    console.log('\nOptions:');
+    console.log('  -t, --tagname        set the name of the tag to be created');
+    console.log('  -h, --help           see help');
+    console.log('\nDocumentation at https://github.com/joelongstreet/rolypoly')
+};
 
-getSVNinfo(function(info){
 
-    var earl = info.URL;
-    if(earl.indexOf('/trunk') != -1){
-        var trunkIndex = earl.indexOf('/trunk');
-        var substring  = earl.substring(trunkIndex, earl.length);
-        earl = earl.replace(substring, '')
-    }
+var executeScript = function(tagName){
 
-    console.log(color.cyan('Gathering tags from remote repository...'));
+    console.log(color.cyan('Checking local svn info...'));
 
-    getNextTagIndex(earl, function(index){
+    getSVNinfo(function(info){
 
-        var tagName = 'release_' + index;
-        if(process.env.TAGNAME != undefined) {
-            tagName = process.env.TAGNAME;
+        var earl = info.URL;
+        if(earl.indexOf('/trunk') != -1){
+            var trunkIndex = earl.indexOf('/trunk');
+            var substring  = earl.substring(trunkIndex, earl.length);
+            earl = earl.replace(substring, '')
         }
 
-        console.log(color.cyan('Copying trunk and creating tag ') + color.green(tagName) + color.cyan('...'));
+        console.log(color.cyan('Gathering tags from remote repository...'));
 
-        makeTag(earl, tagName, function(){
-            makeStageFile(earl, tagName, function(){
-                console.log(color.green('Successfully wrote tag ') + color.magenta(tagName));
+        getNextTagIndex(earl, function(index){
+
+            if(process.env.TAGNAME != undefined) {
+                tagName = process.env.TAGNAME;
+            }
+            if(!tagName) { tagName = 'release_' + index; }
+
+            console.log(color.cyan('Copying trunk and creating tag ') + color.green(tagName) + color.cyan('...'));
+
+            makeTag(earl, tagName, function(){
+                makeStageFile(earl, tagName, function(){
+                    console.log(color.green('Successfully wrote tag ') + color.magenta(tagName));
+                });
             });
         });
     });
-});
+};
+
+
+var args = process.argv;
+if(args.indexOf('-h') != -1){
+    printHelp();
+} else if(args.indexOf('--help') != -1){
+    printHelp();
+} else if(args.indexOf('-t') != -1){
+    var index = args.indexOf('-t') + 1;
+    executeScript(args[index]);
+} else if(args.indexOf('--tagname') != -1){
+    var index = args.indexOf('--tagname') + 1;
+    executeScript(args[index]);
+} else {
+    executeScript();
+}
