@@ -1,19 +1,27 @@
 {
-  "name"            : "rolypoly",
-  "description"     : "Easily create SVN tags for stage rolls",
-  "author"          : "Joe Longstreet",
-  "keywords"        : ["SVN", "tags", "stage", "Git SVN"],
-  "repository"      : {
-    "type"  : "git",
-    "url"   : "https://github.com/joelongstreet/rolypoly.git"
+  "name": "rolypoly",
+  "description": "Easily create SVN tags for stage rolls",
+  "author": "Joe Longstreet",
+  "keywords": [
+    "SVN",
+    "tags",
+    "stage",
+    "Git SVN"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/joelongstreet/rolypoly.git"
   },
-  "preferGlobal"    : "true",
-  "version"         : "0.0.1",
-  "bin"             : { "rolypoly" : "index.js" },
-  "engines"         : {
-    "node"  : "0.8.x",
-    "npm"   : "1.1.9"
+  "preferGlobal": "true",
+  "version": "0.0.1",
+  "bin": {
+    "rolypoly": "index.js"
   },
-  "dependencies"    : {
+  "engines": {
+    "node": "0.8.x",
+    "npm": "1.1.9"
+  },
+  "dependencies": {
+    "cli-color": "~0.2.2"
   }
 }

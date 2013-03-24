@@ -3,6 +3,7 @@
 var fs      = require('fs');
 var cp      = require('child_process');
 var path    = require('path');
+var color   = require('cli-color');
 
 var getNextTagIndex = function(earl, next){
 
@@ -47,6 +48,7 @@ var makeStageFile = function(earl, tagName, next){
     });
 
     var checkout = function(next){
+        console.log(color.cyan('Creating a temporary checkout at ') + color.green('~/.rolypoly') + color.cyan('...'));
         var command = 'svn co ' + earl + '/tags --depth files ' + localPath;
         shellCommand(command, function(){
             if(next) { next(); }
@@ -56,6 +58,7 @@ var makeStageFile = function(earl, tagName, next){
     var createFile = function(next){
         fs.exists(stageFilePath, function(exists){
             if(!exists){
+                console.log(color.yellow('No stage file found, creating one...'))
                 fs.writeFile(stageFilePath, function(){
                     addFile(function(){
                         if(next) { next(); }
@@ -73,6 +76,7 @@ var makeStageFile = function(earl, tagName, next){
     };
 
     var writeToFile = function(next){
+        console.log(color.cyan('Writing stage file...'))
         var buffer = new Buffer(tagName);
         var stream = fs.createWriteStream(stageFilePath);
         stream.on('open', function(data){
@@ -83,6 +87,7 @@ var makeStageFile = function(earl, tagName, next){
     };
 
     var commitFile = function(next){
+        console.log(color.cyan('Comitting updated stage file...'));
         var command = 'svn commit ' + stageFilePath + ' -m "creating a new stage file for release ' + tagName + '"';
         shellCommand(command, function(){
             if(next) { next(); }
@@ -90,6 +95,7 @@ var makeStageFile = function(earl, tagName, next){
     };
 
     var cleanUp = function(next){
+        console.log(color.cyan('Cleaning up temporary files...'))
         var command = 'rm -rf ' + localPath;
         shellCommand(command, function(){
             if(next) { next(); }
@@ -103,15 +109,20 @@ var shellCommand = function(command, next, errHandler){
     cp.exec(command, function(err, stdout, stderr){
         if(err) {
             if(errHandler)  { errHandler();         }
-            else            { console.log(err);     }
+            else            { printError(err);     }
         } else if(stderr) {
             if(errHandler)  { errHandler()          }
-            else            { console.log(stderr);  }
+            else            { printError(stderr);  }
         } else {
             if(next) {next(stdout)}
         }
     });
 }
+
+var printError = function(err){
+    console.log('\n');
+    console.log(color.red.bold(err));
+};
 
 
 var getSVNinfo = function(next){
@@ -142,7 +153,7 @@ var getSVNinfo = function(next){
 };
 
 
-console.log('Checking local svn info...');
+console.log(color.cyan('Checking local svn info...'));
 
 getSVNinfo(function(info){
 
@@ -153,7 +164,7 @@ getSVNinfo(function(info){
         earl = earl.replace(substring, '')
     }
 
-    console.log('Gathering tags from remote repository...');
+    console.log(color.cyan('Gathering tags from remote repository...'));
 
     getNextTagIndex(earl, function(index){
 
@@ -162,12 +173,11 @@ getSVNinfo(function(info){
             tagName = process.env.TAGNAME;
         }
 
-        console.log('Copying trunk to tag "' + tagName + '"...');
+        console.log(color.cyan('Copying trunk and creating tag ') + color.green(tagName) + color.cyan('...'));
 
         makeTag(earl, tagName, function(){
-            console.log('Updating stage file and comitting...');
             makeStageFile(earl, tagName, function(){
-                console.log('FIN!');
+                console.log(color.green('Successfully wrote tag ') + color.magenta(tagName));
             });
         });
     });
