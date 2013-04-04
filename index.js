@@ -30,7 +30,7 @@ var makeTag = function(earl, tagName, next){
 
 var makeStageFile = function(earl, tagName, next){
 
-    var localPath       = path.join(process.env['HOME'], '.rolypoly');
+    var localPath       = path.join(process.env['HOME'], '.rolypoly_tmp_checkout');
     var stageFilePath   = path.join(localPath, 'stage');
 
     fs.mkdir(localPath, 0777, function(){
@@ -48,7 +48,7 @@ var makeStageFile = function(earl, tagName, next){
     });
 
     var checkout = function(next){
-        console.log(color.cyan('Creating a temporary checkout at ') + color.green('~/.rolypoly') + color.cyan('...'));
+        console.log(color.cyan('Creating a temporary checkout at ') + color.green('~/.rolypoly_tmp_checkout') + color.cyan('...'));
         var command = 'svn co ' + earl + '/tags --depth files ' + localPath;
         shellCommand(command, function(){
             if(next) { next(); }
@@ -105,18 +105,20 @@ var makeStageFile = function(earl, tagName, next){
 
 
 var shellCommand = function(command, next, errHandler){
-
-    cp.exec(command, function(err, stdout, stderr){
-        if(err) {
-            if(errHandler)  { errHandler();         }
-            else            { printError(err);     }
-        } else if(stderr) {
-            if(errHandler)  { errHandler()          }
-            else            { printError(stderr);  }
-        } else {
-            if(next) {next(stdout)}
-        }
-    });
+    if (command) {
+        cp.exec(command, function(err, stdout, stderr){
+            if(err) {
+                if(errHandler)  { errHandler();         }
+                else            { printError(err);     }
+            } else if(stderr) {
+                if(errHandler)  { errHandler()          }
+                else            { printError(stderr);  }
+            } else {
+                if(next) {next(stdout)}
+            }
+        });
+    }
+    else if (next) {next();}
 }
 
 var printError = function(err){
@@ -161,7 +163,6 @@ var printHelp = function(){
     console.log('\nDocumentation at https://github.com/joelongstreet/rolypoly')
 };
 
-
 var executeScript = function(tagName){
 
     console.log(color.cyan('Checking local svn info...'));
@@ -182,19 +183,50 @@ var executeScript = function(tagName){
             if(process.env.TAGNAME != undefined) {
                 tagName = process.env.TAGNAME;
             }
-            if(!tagName) { tagName = 'release_' + index; }
+            if(!tagName) { 
+                var size = 3;
+                var s = index+"";
+                while (s.length < size) s = "0" + s;
+                tagName = 'release_' + s;
+            }
 
             console.log(color.cyan('Copying trunk and creating tag ') + color.green(tagName) + color.cyan('...'));
-
+            
             makeTag(earl, tagName, function(){
-                makeStageFile(earl, tagName, function(){
-                    console.log(color.green('Successfully wrote tag ') + color.magenta(tagName));
+                getConfigVariable(earl, 'beforeRoll', function(value) {
+                    if (value) { console.log(color.cyan('Running beforeRoll commands ') + color.green(value) + color.cyan('...')); }
+                    shellCommand(value, function(stdout){ 
+                        console.log(stdout); 
+                        
+                        makeStageFile(earl, tagName, function(){
+                            console.log(color.green('Successfully wrote tag ') + color.magenta(tagName));
+
+                            getConfigVariable(earl, 'afterRoll', function(value) {
+                                if (value) { console.log(color.cyan('Running afterRoll commands ') + color.green(value) + color.cyan('...')); }
+                                shellCommand(value, function(stdout){ console.log(stdout); });
+                            });
+                        });
+                    });
                 });
-            });
+            });           
         });
     });
 };
 
+var getConfigVariable = function(earl, variableName, next) {
+    var configFile = path.join(process.env['HOME'], '.rolypoly');
+    fs.exists(configFile, function (exists) {
+        if (exists) {
+            fs.readFile(configFile, 'utf8', function (err, data) {
+                if (err) throw err;
+                data = JSON.parse(data);
+                value = data[earl.trim() + '/tags/stage'][variableName];
+                if (next) { next(value); }
+                else return value;
+            });
+        }
+    }); 
+}
 
 var args = process.argv;
 if(args.indexOf('-h') != -1){
