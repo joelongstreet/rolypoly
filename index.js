@@ -224,6 +224,8 @@ var getConfigVariable = function(earl, variableName, next) {
                 if (next) { next(value); }
                 else return value;
             });
+        } else {
+            if (next) { next(); }
         }
     }); 
 }
