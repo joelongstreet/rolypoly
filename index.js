@@ -218,7 +218,7 @@ var getConfigVariable = function(earl, variableName, next) {
     fs.exists(configFile, function (exists) {
         if (exists) {
             fs.readFile(configFile, 'utf8', function (err, data) {
-                if (err) throw err;
+                if (err) printError(err);
                 data = JSON.parse(data);
                 value = data[earl.trim() + '/tags/stage'][variableName];
                 if (next) { next(value); }
