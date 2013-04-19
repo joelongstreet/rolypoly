@@ -195,15 +195,17 @@ var executeScript = function(tagName){
             makeTag(earl, tagName, function(){
                 getConfigVariable(earl, 'beforeRoll', function(value) {
                     if (value) { console.log(color.cyan('Running beforeRoll commands ') + color.green(value) + color.cyan('...')); }
-                    shellCommand(value, function(stdout){ 
-                        console.log(stdout); 
-                        
+                    shellCommand(value, function(stdout){
+                        if(stdout) { console.log(stdout); }
+
                         makeStageFile(earl, tagName, function(){
                             console.log(color.green('Successfully wrote tag ') + color.magenta(tagName));
 
                             getConfigVariable(earl, 'afterRoll', function(value) {
                                 if (value) { console.log(color.cyan('Running afterRoll commands ') + color.green(value) + color.cyan('...')); }
-                                shellCommand(value, function(stdout){ console.log(stdout); });
+                                shellCommand(value, function(stdout){
+                                    if(stdout) { console.log(stdout); }
+                                });
                             });
                         });
                     });
