@@ -13,7 +13,7 @@
     "url": "https://github.com/joelongstreet/rolypoly.git"
   },
   "preferGlobal": "true",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "bin": {
     "rolypoly": "index.js",
     "rollypollie": "index.js",
