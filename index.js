@@ -193,18 +193,18 @@ var executeScript = function(tagName){
             console.log(color.cyan('Copying trunk and creating tag ') + color.green(tagName) + color.cyan('...'));
             
             makeTag(earl, tagName, function(){
-                getConfigVariable(earl, 'beforeRoll', function(value) {
-                    if (value) { console.log(color.cyan('Running beforeRoll commands ') + color.green(value) + color.cyan('...')); }
-                    shellCommand(value, function(stdout){
-                        if(stdout) { console.log(stdout); }
+                getConfigVariable(earl, 'beforeRoll', function(beforeConfig) {
+                    if (beforeConfig) { console.log(color.cyan('Running beforeRoll commands ') + color.green(beforeConfig) + color.cyan('...')); }
+                    shellCommand(beforeConfig, function(beforeStdout){
+                        if(beforeStdout) { console.log(beforeStdout); }
 
                         makeStageFile(earl, tagName, function(){
                             console.log(color.green('Successfully wrote tag ') + color.magenta(tagName));
 
-                            getConfigVariable(earl, 'afterRoll', function(value) {
-                                if (value) { console.log(color.cyan('Running afterRoll commands ') + color.green(value) + color.cyan('...')); }
-                                shellCommand(value, function(stdout){
-                                    if(stdout) { console.log(stdout); }
+                            getConfigVariable(earl, 'afterRoll', function(afterConfig) {
+                                if (afterConfig) { console.log(color.cyan('Running afterRoll commands ') + color.green(afterConfig) + color.cyan('...')); }
+                                shellCommand(afterConfig, function(afterStdout){
+                                    if(afterStdout) { console.log(afterStdout); }
                                 });
                             });
                         });
